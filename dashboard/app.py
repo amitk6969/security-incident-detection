@@ -1,58 +1,7 @@
 import streamlit as st
 import pandas as pd
+from streamlit_autorefresh import st_autorefresh
 
-from api import (
-    get_dashboard_summary,
-    get_severity_data,
-    get_incident_type_data,
-    get_response_status_data,
-    get_timeline_data,
-    get_user_data
-)
-
-from charts import (
-    create_severity_chart,
-    create_incident_type_chart,
-    create_response_status_chart,
-    create_timeline_chart,
-    create_user_chart
-)
-from api import (
-    get_dashboard_summary,
-    get_severity_data,
-    get_incident_type_data,
-    get_response_status_data,
-    get_timeline_data,
-    get_user_data,
-    get_risk_score_data
-)
-from charts import (
-    create_severity_chart,
-    create_incident_type_chart,
-    create_response_status_chart,
-    create_timeline_chart,
-    create_user_chart,
-    create_risk_score_chart
-)
-from api import (
-    get_dashboard_summary,
-    get_severity_data,
-    get_incident_type_data,
-    get_response_status_data,
-    get_timeline_data,
-    get_user_data,
-    get_risk_score_data,
-    get_attack_heatmap_data
-)
-from charts import (
-    create_severity_chart,
-    create_incident_type_chart,
-    create_response_status_chart,
-    create_timeline_chart,
-    create_user_chart,
-    create_risk_score_chart,
-    create_attack_heatmap
-)
 from api import (
     get_dashboard_summary,
     get_severity_data,
@@ -64,30 +13,21 @@ from api import (
     get_attack_heatmap_data,
     get_incidents
 )
-st.divider()
 
-st.subheader("🔥 Security Activity Heatmap")
-
-heatmap_data = get_attack_heatmap_data()
-
-heatmap = create_attack_heatmap(heatmap_data)
-
-st.plotly_chart(
-    heatmap,
-    use_container_width=True
+from charts import (
+    create_severity_chart,
+    create_incident_type_chart,
+    create_response_status_chart,
+    create_timeline_chart,
+    create_user_chart,
+    create_risk_score_chart,
+    create_attack_heatmap
 )
 
-risk_data = get_risk_score_data()
 
-st.subheader("🎯 AI Risk Score Distribution")
-
-risk_chart = create_risk_score_chart(risk_data)
-
-st.plotly_chart(
-    risk_chart,
-    use_container_width=True
-)
-
+# ==================================================
+# PAGE CONFIGURATION
+# ==================================================
 
 st.set_page_config(
     page_title="Security Operations Dashboard",
@@ -95,6 +35,12 @@ st.set_page_config(
     layout="wide"
 )
 
+st_autorefresh(
+    interval=30000,
+    key="security_dashboard_refresh"
+)# ==================================================
+# HEADER
+# ==================================================
 
 st.title("🛡️ Security Operations Dashboard")
 
@@ -103,128 +49,131 @@ st.caption(
 )
 
 
-# --------------------------------------------------
-# KPI SECTION
-# --------------------------------------------------
+# ==================================================
+# LOAD DATA
+# ==================================================
 
 try:
 
     summary = get_dashboard_summary()
 
+    timeline_data = get_timeline_data()
+    severity_data = get_severity_data()
+    incident_type_data = get_incident_type_data()
+    response_data = get_response_status_data()
+    user_data = get_user_data()
+    risk_data = get_risk_score_data()
+    heatmap_data = get_attack_heatmap_data()
+    incidents = get_incidents()
+
+
+    # ==================================================
+    # KPI CARDS
+    # ==================================================
+
     col1, col2, col3, col4 = st.columns(4)
 
-    col1.metric(
-        "Total Incidents",
-        summary["totalIncidents"]
-    )
+    with col1:
+        st.metric(
+            "Total Incidents",
+            summary.get("totalIncidents", 0)
+        )
 
-    col2.metric(
-        "Critical Incidents",
-        summary["criticalIncidents"]
-    )
+    with col2:
+        st.metric(
+            "Critical Incidents",
+            summary.get("criticalIncidents", 0)
+        )
 
-    col3.metric(
-        "High Risk Incidents",
-        summary["highRiskIncidents"]
-    )
+    with col3:
+        st.metric(
+            "High Risk Incidents",
+            summary.get("highRiskIncidents", 0)
+        )
 
-    col4.metric(
-        "Blocked Users",
-        summary["blockedUsers"]
-    )
+    with col4:
+        st.metric(
+            "Blocked Users",
+            summary.get("blockedUsers", 0)
+        )
+
+
+    # ==================================================
+    # CRITICAL SECURITY ALERTS
+    # ==================================================
 
     st.divider()
 
+    st.subheader("🚨 Critical Security Alerts")
 
-    # --------------------------------------------------
-    # TIMELINE
-    # --------------------------------------------------
+    critical_incidents = []
 
-    timeline_data = get_timeline_data()
+    for incident in incidents:
 
-    st.subheader("📈 Security Incidents Over Time")
+        severity = str(
+            incident.get("severity", "")
+        ).upper()
 
-    timeline_chart = create_timeline_chart(
-        timeline_data
-    )
+        try:
+            risk_score = float(
+                incident.get("riskScore", 0)
+            )
+        except (ValueError, TypeError):
+            risk_score = 0
 
-    st.plotly_chart(
-        timeline_chart,
-        use_container_width=True
-    )
+        if severity == "CRITICAL" or risk_score >= 90:
 
-
-    # --------------------------------------------------
-    # SEVERITY + ATTACK TYPES
-    # --------------------------------------------------
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        severity_data = get_severity_data()
-
-        severity_chart = create_severity_chart(
-            severity_data
-        )
-
-        st.plotly_chart(
-            severity_chart,
-            use_container_width=True
-        )
+            critical_incidents.append(
+                incident
+            )
 
 
-    with col2:
+    if critical_incidents:
 
-        incident_type_data = get_incident_type_data()
+        for incident in critical_incidents[:5]:
 
-        incident_type_chart = create_incident_type_chart(
-            incident_type_data
-        )
+            with st.container(border=True):
 
-        st.plotly_chart(
-            incident_type_chart,
-            use_container_width=True
-        )
+                col1, col2, col3, col4 = st.columns(4)
 
+                with col1:
 
-    # --------------------------------------------------
-    # RESPONSE STATUS + USERS
-    # --------------------------------------------------
+                    st.write(
+                        f"**Incident:** "
+                        f"{incident.get('id', 'N/A')}"
+                    )
 
-    col1, col2 = st.columns(2)
+                with col2:
 
-    with col1:
+                    st.write(
+                        f"**Severity:** "
+                        f"{incident.get('severity', 'N/A')}"
+                    )
 
-        response_data = get_response_status_data()
+                with col3:
 
-        response_chart = create_response_status_chart(
-            response_data
-        )
+                    st.write(
+                        f"**Risk Score:** "
+                        f"{incident.get('riskScore', 'N/A')}"
+                    )
 
-        st.plotly_chart(
-            response_chart,
-            use_container_width=True
+                with col4:
+
+                    st.write(
+                        f"**Status:** "
+                        f"{incident.get('status', 'N/A')}"
+                    )
+
+    else:
+
+        st.success(
+            "No critical security incidents detected."
         )
 
 
-    with col2:
-
-        user_data = get_user_data()
-
-        user_chart = create_user_chart(
-            user_data
-        )
-
-        st.plotly_chart(
-            user_chart,
-            use_container_width=True
-        )
-
-
-    # --------------------------------------------------
+    # ==================================================
     # AVERAGE RISK
-    # --------------------------------------------------
+    # ==================================================
 
     st.divider()
 
@@ -232,87 +181,367 @@ try:
 
     st.metric(
         "Average Risk Score",
-        round(summary["averageRiskScore"], 2)
+        round(
+            summary.get("averageRiskScore", 0),
+            2
+        )
     )
 
+
+    # ==================================================
+    # INCIDENT TIMELINE
+    # ==================================================
+
+    st.divider()
+
+    timeline_chart = create_timeline_chart(
+        timeline_data
+    )
+
+    st.plotly_chart(
+        timeline_chart,
+        use_container_width=True,
+        key="timeline_chart"
+    )
+
+
+    # ==================================================
+    # SEVERITY + ATTACK TYPE
+    # ==================================================
+
+    col1, col2 = st.columns(2)
+
+
+    with col1:
+
+        severity_chart = create_severity_chart(
+            severity_data
+        )
+
+        st.plotly_chart(
+            severity_chart,
+            use_container_width=True,
+            key="severity_chart"
+        )
+
+
+    with col2:
+
+        incident_type_chart = create_incident_type_chart(
+            incident_type_data
+        )
+
+        st.plotly_chart(
+            incident_type_chart,
+            use_container_width=True,
+            key="attack_type_chart"
+        )
+
+
+    # ==================================================
+    # RESPONSE STATUS + USER ACTIVITY
+    # ==================================================
+
+    col1, col2 = st.columns(2)
+
+
+    with col1:
+
+        response_chart = create_response_status_chart(
+            response_data
+        )
+
+        st.plotly_chart(
+            response_chart,
+            use_container_width=True,
+            key="response_status_chart"
+        )
+
+
+    with col2:
+
+        user_chart = create_user_chart(
+            user_data
+        )
+
+        st.plotly_chart(
+            user_chart,
+            use_container_width=True,
+            key="user_chart"
+        )
+
+
+    # ==================================================
+    # RISK SCORE DISTRIBUTION
+    # ==================================================
+
+    st.divider()
+
+    risk_chart = create_risk_score_chart(
+        risk_data
+    )
+
+    st.plotly_chart(
+        risk_chart,
+        use_container_width=True,
+        key="risk_score_chart"
+    )
+
+
+    # ==================================================
+    # SECURITY ACTIVITY HEATMAP
+    # ==================================================
+
+    st.divider()
+
+    heatmap = create_attack_heatmap(
+        heatmap_data
+    )
+
+    st.plotly_chart(
+        heatmap,
+        use_container_width=True,
+        key="attack_heatmap"
+    )
+
+
+    # ==================================================
+    # INCIDENT INVESTIGATION
+    # ==================================================
+
+    st.divider()
+
+    st.subheader(
+        "🔎 Security Incident Investigation"
+    )
+
+
+    if incidents:
+
+        incident_df = pd.DataFrame(
+            incidents
+        )
+
+
+        # ----------------------------------------------
+        # FILTERS
+        # ----------------------------------------------
+
+        col1, col2, col3 = st.columns(3)
+
+
+        severity_options = [
+            "All"
+        ] + sorted(
+            incident_df["severity"]
+            .dropna()
+            .unique()
+            .tolist()
+        )
+
+
+        incident_type_options = [
+            "All"
+        ] + sorted(
+            incident_df["incidentType"]
+            .dropna()
+            .unique()
+            .tolist()
+        )
+
+
+        status_options = [
+            "All"
+        ] + sorted(
+            incident_df["status"]
+            .dropna()
+            .unique()
+            .tolist()
+        )
+
+
+        with col1:
+
+            selected_severity = st.selectbox(
+                "Severity",
+                severity_options
+            )
+
+
+        with col2:
+
+            selected_type = st.selectbox(
+                "Incident Type",
+                incident_type_options
+            )
+
+
+        with col3:
+
+            selected_status = st.selectbox(
+                "Status",
+                status_options
+            )
+
+
+        # ----------------------------------------------
+        # APPLY FILTERS
+        # ----------------------------------------------
+
+        filtered_df = incident_df.copy()
+
+
+        if selected_severity != "All":
+
+            filtered_df = filtered_df[
+                filtered_df["severity"]
+                == selected_severity
+            ]
+
+
+        if selected_type != "All":
+
+            filtered_df = filtered_df[
+                filtered_df["incidentType"]
+                == selected_type
+            ]
+
+
+        if selected_status != "All":
+
+            filtered_df = filtered_df[
+                filtered_df["status"]
+                == selected_status
+            ]
+
+
+        # ----------------------------------------------
+        # INCIDENT DETAILS
+        # ----------------------------------------------
+
+        st.subheader("📋 Incident Details")
+
+        if not filtered_df.empty:
+
+            incident_ids = filtered_df[
+                "id"
+            ].tolist()
+
+            selected_incident_id = st.selectbox(
+                "Select an incident",
+                incident_ids
+            )
+
+            selected_incident = filtered_df[
+                filtered_df["id"]
+                == selected_incident_id
+            ].iloc[0]
+
+
+            st.divider()
+
+            col1, col2, col3, col4 = st.columns(4)
+
+
+            with col1:
+
+                st.metric(
+                    "Risk Score",
+                    selected_incident.get(
+                        "riskScore",
+                        "N/A"
+                    )
+                )
+
+
+            with col2:
+
+                st.metric(
+                    "Severity",
+                    selected_incident.get(
+                        "severity",
+                        "N/A"
+                    )
+                )
+
+
+            with col3:
+
+                st.metric(
+                    "Confidence",
+                    selected_incident.get(
+                        "confidence",
+                        "N/A"
+                    )
+                )
+
+
+            with col4:
+
+                st.metric(
+                    "Status",
+                    selected_incident.get(
+                        "status",
+                        "N/A"
+                    )
+                )
+
+
+            st.subheader(
+                "🤖 AI Security Analysis"
+            )
+
+            st.write(
+                selected_incident.get(
+                    "explanation",
+                    "No explanation available."
+                )
+            )
+
+
+            st.subheader(
+                "🛡️ Recommended Action"
+            )
+
+            st.write(
+                selected_incident.get(
+                    "recommendedAction",
+                    "No recommended action available."
+                )
+            )
+
+
+        else:
+
+            st.info(
+                "No incidents match the selected filters."
+            )
+
+
+        # ----------------------------------------------
+        # INCIDENT TABLE
+        # ----------------------------------------------
+
+        st.dataframe(
+            filtered_df,
+            use_container_width=True,
+            hide_index=True
+        )
+
+
+    else:
+
+        st.info(
+            "No security incidents found."
+        )
+
+
+# ==================================================
+# ERROR HANDLING
+# ==================================================
 
 except Exception as e:
 
     st.error(
         f"Unable to load dashboard data: {e}"
     )
-
-st.divider()
-
-st.subheader("🔎 Security Incident Investigation")
-
-incidents = get_incidents()
-
-if incidents:
-
-    incident_df = pd.DataFrame(incidents)
-
-    col1, col2, col3 = st.columns(3)
-
-    severity_options = [
-        "All"
-    ] + sorted(
-        incident_df["severity"].dropna().unique().tolist()
-    )
-
-    incident_type_options = [
-        "All"
-    ] + sorted(
-        incident_df["incidentType"].dropna().unique().tolist()
-    )
-
-    status_options = [
-        "All"
-    ] + sorted(
-        incident_df["status"].dropna().unique().tolist()
-    )
-
-    with col1:
-        selected_severity = st.selectbox(
-            "Severity",
-            severity_options
-        )
-
-    with col2:
-        selected_type = st.selectbox(
-            "Incident Type",
-            incident_type_options
-        )
-
-    with col3:
-        selected_status = st.selectbox(
-            "Status",
-            status_options
-        )
-
-    filtered_df = incident_df.copy()
-
-    if selected_severity != "All":
-        filtered_df = filtered_df[
-            filtered_df["severity"] == selected_severity
-        ]
-
-    if selected_type != "All":
-        filtered_df = filtered_df[
-            filtered_df["incidentType"] == selected_type
-        ]
-
-    if selected_status != "All":
-        filtered_df = filtered_df[
-            filtered_df["status"] == selected_status
-        ]
-
-    st.dataframe(
-        filtered_df,
-        use_container_width=True,
-        hide_index=True
-    )
-
-else:
-
-    st.info("No security incidents found.")
