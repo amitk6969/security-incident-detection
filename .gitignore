@@ -20,6 +20,12 @@ target/
 *.ipr
 .env
 
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
