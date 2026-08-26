@@ -30,22 +30,202 @@ from charts import (
 # ==================================================
 
 st.set_page_config(
-    page_title="Security Operations Dashboard",
+    page_title="Security Operations Center",
     page_icon="🛡️",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
+
+# ==================================================
+# CUSTOM UI / CSS
+# ==================================================
+
+st.html(
+    """
+    <style>
+
+    /* ---------- GLOBAL ---------- */
+
+    .stApp {
+        background-color: #0b1120;
+    }
+
+    .main {
+        background-color: #0b1120;
+    }
+
+    h1, h2, h3 {
+        color: #f8fafc;
+    }
+
+    p, label {
+        color: #cbd5e1;
+    }
+
+
+    /* ---------- HEADER ---------- */
+
+    .soc-header {
+        padding: 20px 25px;
+        border-radius: 14px;
+        background: linear-gradient(
+            135deg,
+            #111827,
+            #172554
+        );
+        border: 1px solid #1e3a5f;
+        margin-bottom: 25px;
+    }
+
+    .soc-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #f8fafc;
+        margin-bottom: 5px;
+    }
+
+    .soc-subtitle {
+        color: #94a3b8;
+        font-size: 15px;
+    }
+
+    .status-online {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        background-color: #052e16;
+        color: #4ade80;
+        border: 1px solid #166534;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 12px;
+    }
+
+
+    /* ---------- KPI CARDS ---------- */
+
+    div[data-testid="metric-container"] {
+        background: linear-gradient(
+            145deg,
+            #111827,
+            #172033
+        );
+
+        border: 1px solid #263449;
+        padding: 18px;
+        border-radius: 12px;
+
+        box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    div[data-testid="metric-container"] label {
+        color: #94a3b8 !important;
+    }
+
+    div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+        color: #f8fafc;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+
+    /* ---------- ALERT CARDS ---------- */
+
+    .alert-card {
+        background: linear-gradient(
+            135deg,
+            #1f1115,
+            #2a151b
+        );
+
+        border: 1px solid #7f1d1d;
+        border-left: 5px solid #ef4444;
+
+        padding: 16px;
+        border-radius: 10px;
+
+        margin-bottom: 10px;
+    }
+
+    .alert-title {
+        color: #f87171;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .alert-info {
+        color: #cbd5e1;
+        font-size: 14px;
+    }
+
+
+    /* ---------- SECTION HEADERS ---------- */
+
+    .section-header {
+        font-size: 21px;
+        font-weight: 650;
+        color: #e2e8f0;
+        margin-top: 10px;
+        margin-bottom: 15px;
+    }
+
+
+    /* ---------- INCIDENT DETAILS ---------- */
+
+    .detail-card {
+        background-color: #111827;
+        border: 1px solid #263449;
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 10px;
+    }
+
+
+    /* ---------- FOOTER ---------- */
+
+    .footer {
+        text-align: center;
+        color: #64748b;
+        font-size: 12px;
+        padding: 25px 0 10px 0;
+    }
+
+    </style>
+    """
+)
+
+
+# ==================================================
+# AUTO REFRESH
+# ==================================================
 
 st_autorefresh(
     interval=30000,
     key="security_dashboard_refresh"
-)# ==================================================
+)
+
+
+# ==================================================
 # HEADER
 # ==================================================
 
-st.title("🛡️ Security Operations Dashboard")
-
-st.caption(
-    "AI-powered security incident monitoring and response system"
+st.html(
+    """
+    <div class="soc-header">
+        <div class="soc-title">
+            🛡️ Security Operations Center
+        </div>
+        <div class="soc-subtitle">
+            AI-powered security incident monitoring,
+            threat analysis and automated response
+        </div>
+        <div class="status-online">
+            ● SYSTEM ONLINE
+        </div>
+    </div>
+    """
 )
 
 
@@ -71,30 +251,54 @@ try:
     # KPI CARDS
     # ==================================================
 
+    st.html(
+        '<div class="section-header">📊 Security Overview</div>'
+    )
+
     col1, col2, col3, col4 = st.columns(4)
 
+
     with col1:
+
         st.metric(
             "Total Incidents",
-            summary.get("totalIncidents", 0)
+            summary.get(
+                "totalIncidents",
+                0
+            )
         )
+
 
     with col2:
+
         st.metric(
             "Critical Incidents",
-            summary.get("criticalIncidents", 0)
+            summary.get(
+                "criticalIncidents",
+                0
+            )
         )
+
 
     with col3:
+
         st.metric(
             "High Risk Incidents",
-            summary.get("highRiskIncidents", 0)
+            summary.get(
+                "highRiskIncidents",
+                0
+            )
         )
 
+
     with col4:
+
         st.metric(
             "Blocked Users",
-            summary.get("blockedUsers", 0)
+            summary.get(
+                "blockedUsers",
+                0
+            )
         )
 
 
@@ -104,24 +308,46 @@ try:
 
     st.divider()
 
-    st.subheader("🚨 Critical Security Alerts")
+    st.markdown(
+        '<div class="section-header">🚨 Critical Security Alerts</div>',
+        unsafe_allow_html=True
+    )
+
 
     critical_incidents = []
+
 
     for incident in incidents:
 
         severity = str(
-            incident.get("severity", "")
+            incident.get(
+                "severity",
+                ""
+            )
         ).upper()
 
+
         try:
+
             risk_score = float(
-                incident.get("riskScore", 0)
+                incident.get(
+                    "riskScore",
+                    0
+                )
             )
-        except (ValueError, TypeError):
+
+        except (
+            ValueError,
+            TypeError
+        ):
+
             risk_score = 0
 
-        if severity == "CRITICAL" or risk_score >= 90:
+
+        if (
+            severity == "CRITICAL"
+            or risk_score >= 90
+        ):
 
             critical_incidents.append(
                 incident
@@ -132,37 +358,58 @@ try:
 
         for incident in critical_incidents[:5]:
 
-            with st.container(border=True):
+            incident_id = incident.get(
+                "id",
+                "N/A"
+            )
 
-                col1, col2, col3, col4 = st.columns(4)
+            severity = incident.get(
+                "severity",
+                "N/A"
+            )
 
-                with col1:
+            risk_score = incident.get(
+                "riskScore",
+                "N/A"
+            )
 
-                    st.write(
-                        f"**Incident:** "
-                        f"{incident.get('id', 'N/A')}"
-                    )
+            status = incident.get(
+                "status",
+                "N/A"
+            )
 
-                with col2:
 
-                    st.write(
-                        f"**Severity:** "
-                        f"{incident.get('severity', 'N/A')}"
-                    )
+            st.html(
+                f"""
+                <div class="alert-card">
 
-                with col3:
+                    <div class="alert-title">
+                        🔴 Critical Security Event
+                    </div>
 
-                    st.write(
-                        f"**Risk Score:** "
-                        f"{incident.get('riskScore', 'N/A')}"
-                    )
+                    <div class="alert-info">
 
-                with col4:
+                        <b>Incident:</b>
+                        {incident_id}
+                        &nbsp;&nbsp; | &nbsp;&nbsp;
 
-                    st.write(
-                        f"**Status:** "
-                        f"{incident.get('status', 'N/A')}"
-                    )
+                        <b>Severity:</b>
+                        {severity}
+                        &nbsp;&nbsp; | &nbsp;&nbsp;
+
+                        <b>Risk Score:</b>
+                        {risk_score}
+                        &nbsp;&nbsp; | &nbsp;&nbsp;
+
+                        <b>Status:</b>
+                        {status}
+
+                    </div>
+
+                </div>
+                """
+            )
+
 
     else:
 
@@ -172,20 +419,43 @@ try:
 
 
     # ==================================================
-    # AVERAGE RISK
+    # OVERALL AI RISK
     # ==================================================
 
     st.divider()
 
-    st.subheader("🎯 Overall AI Risk")
-
-    st.metric(
-        "Average Risk Score",
-        round(
-            summary.get("averageRiskScore", 0),
-            2
-        )
+    st.markdown(
+        '<div class="section-header">🎯 Overall AI Risk</div>',
+        unsafe_allow_html=True
     )
+
+
+    col1, col2 = st.columns(2)
+
+
+    with col1:
+
+        st.metric(
+            "Average Risk Score",
+            round(
+                summary.get(
+                    "averageRiskScore",
+                    0
+                ),
+                2
+            )
+        )
+
+
+    with col2:
+
+        st.metric(
+            "Blocked Users",
+            summary.get(
+                "blockedUsers",
+                0
+            )
+        )
 
 
     # ==================================================
@@ -194,9 +464,16 @@ try:
 
     st.divider()
 
+    st.markdown(
+        '<div class="section-header">📈 Security Incidents Over Time</div>',
+        unsafe_allow_html=True
+    )
+
+
     timeline_chart = create_timeline_chart(
         timeline_data
     )
+
 
     st.plotly_chart(
         timeline_chart,
@@ -214,9 +491,16 @@ try:
 
     with col1:
 
+        st.markdown(
+            '<div class="section-header">📊 Severity Distribution</div>',
+            unsafe_allow_html=True
+        )
+
+
         severity_chart = create_severity_chart(
             severity_data
         )
+
 
         st.plotly_chart(
             severity_chart,
@@ -227,9 +511,16 @@ try:
 
     with col2:
 
+        st.markdown(
+            '<div class="section-header">🔥 Attack Types</div>',
+            unsafe_allow_html=True
+        )
+
+
         incident_type_chart = create_incident_type_chart(
             incident_type_data
         )
+
 
         st.plotly_chart(
             incident_type_chart,
@@ -247,9 +538,16 @@ try:
 
     with col1:
 
+        st.markdown(
+            '<div class="section-header">🛡️ Response Status</div>',
+            unsafe_allow_html=True
+        )
+
+
         response_chart = create_response_status_chart(
             response_data
         )
+
 
         st.plotly_chart(
             response_chart,
@@ -260,9 +558,16 @@ try:
 
     with col2:
 
+        st.markdown(
+            '<div class="section-header">👤 User Activity</div>',
+            unsafe_allow_html=True
+        )
+
+
         user_chart = create_user_chart(
             user_data
         )
+
 
         st.plotly_chart(
             user_chart,
@@ -277,9 +582,16 @@ try:
 
     st.divider()
 
+    st.markdown(
+        '<div class="section-header">🎯 AI Risk Score Distribution</div>',
+        unsafe_allow_html=True
+    )
+
+
     risk_chart = create_risk_score_chart(
         risk_data
     )
+
 
     st.plotly_chart(
         risk_chart,
@@ -294,9 +606,16 @@ try:
 
     st.divider()
 
+    st.markdown(
+        '<div class="section-header">🔥 Security Activity Heatmap</div>',
+        unsafe_allow_html=True
+    )
+
+
     heatmap = create_attack_heatmap(
         heatmap_data
     )
+
 
     st.plotly_chart(
         heatmap,
@@ -311,8 +630,9 @@ try:
 
     st.divider()
 
-    st.subheader(
-        "🔎 Security Incident Investigation"
+    st.markdown(
+        '<div class="section-header">🔎 Security Incident Investigation</div>',
+        unsafe_allow_html=True
     )
 
 
@@ -333,7 +653,9 @@ try:
         severity_options = [
             "All"
         ] + sorted(
-            incident_df["severity"]
+            incident_df[
+                "severity"
+            ]
             .dropna()
             .unique()
             .tolist()
@@ -343,7 +665,9 @@ try:
         incident_type_options = [
             "All"
         ] + sorted(
-            incident_df["incidentType"]
+            incident_df[
+                "incidentType"
+            ]
             .dropna()
             .unique()
             .tolist()
@@ -353,7 +677,9 @@ try:
         status_options = [
             "All"
         ] + sorted(
-            incident_df["status"]
+            incident_df[
+                "status"
+            ]
             .dropna()
             .unique()
             .tolist()
@@ -394,7 +720,9 @@ try:
         if selected_severity != "All":
 
             filtered_df = filtered_df[
-                filtered_df["severity"]
+                filtered_df[
+                    "severity"
+                ]
                 == selected_severity
             ]
 
@@ -402,7 +730,9 @@ try:
         if selected_type != "All":
 
             filtered_df = filtered_df[
-                filtered_df["incidentType"]
+                filtered_df[
+                    "incidentType"
+                ]
                 == selected_type
             ]
 
@@ -410,7 +740,9 @@ try:
         if selected_status != "All":
 
             filtered_df = filtered_df[
-                filtered_df["status"]
+                filtered_df[
+                    "status"
+                ]
                 == selected_status
             ]
 
@@ -419,7 +751,11 @@ try:
         # INCIDENT DETAILS
         # ----------------------------------------------
 
-        st.subheader("📋 Incident Details")
+        st.markdown(
+            '<div class="section-header">📋 Incident Details</div>',
+            unsafe_allow_html=True
+        )
+
 
         if not filtered_df.empty:
 
@@ -427,18 +763,26 @@ try:
                 "id"
             ].tolist()
 
+
             selected_incident_id = st.selectbox(
                 "Select an incident",
                 incident_ids
             )
 
+
             selected_incident = filtered_df[
-                filtered_df["id"]
+                filtered_df[
+                    "id"
+                ]
                 == selected_incident_id
             ].iloc[0]
 
 
-            st.divider()
+            st.markdown(
+                '<div class="detail-card">',
+                unsafe_allow_html=True
+            )
+
 
             col1, col2, col3, col4 = st.columns(4)
 
@@ -487,9 +831,17 @@ try:
                 )
 
 
-            st.subheader(
-                "🤖 AI Security Analysis"
+            st.markdown(
+                "</div>",
+                unsafe_allow_html=True
             )
+
+
+            st.markdown(
+                '<div class="section-header">🤖 AI Security Analysis</div>',
+                unsafe_allow_html=True
+            )
+
 
             st.write(
                 selected_incident.get(
@@ -499,9 +851,11 @@ try:
             )
 
 
-            st.subheader(
-                "🛡️ Recommended Action"
+            st.markdown(
+                '<div class="section-header">🛡️ Recommended Action</div>',
+                unsafe_allow_html=True
             )
+
 
             st.write(
                 selected_incident.get(
@@ -522,6 +876,12 @@ try:
         # INCIDENT TABLE
         # ----------------------------------------------
 
+        st.markdown(
+            '<div class="section-header">📋 Incident Records</div>',
+            unsafe_allow_html=True
+        )
+
+
         st.dataframe(
             filtered_df,
             use_container_width=True,
@@ -534,6 +894,24 @@ try:
         st.info(
             "No security incidents found."
         )
+
+
+    # ==================================================
+    # FOOTER
+    # ==================================================
+
+    st.markdown(
+        """
+        <div class="footer">
+            🛡️ Security Operations Center
+            &nbsp; • &nbsp;
+            AI Security Monitoring
+            &nbsp; • &nbsp;
+            Auto-refresh: 30 seconds
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 # ==================================================
